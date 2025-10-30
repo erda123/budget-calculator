@@ -1,6 +1,5 @@
 <script>
-function fmt(n){ return Number(n).toLocaleString('ru-RU') }
-function toNum(v){ return Number(String(v).replace(/\s+/g,'')) || 0 }
+// --- Упрощённая версия, только нужная часть ---
 
 const expensesListEl = document.getElementById('expensesList')
 let expenses = [
@@ -9,114 +8,62 @@ let expenses = [
   { id: 3, name: 'Развлечения', value: 0 }
 ]
 
-function renderExpenses(){
+function createExpenseRow(e) {
+  const wrap = document.createElement('div')
+  wrap.className = 'expense'
+
+  const name = document.createElement('input')
+  name.type = 'text'
+  name.value = e.name
+  name.addEventListener('input', ev => {
+    e.name = ev.target.value
+  })
+
+  const val = document.createElement('input')
+  val.type = 'number'
+  val.value = e.value
+  val.style.width = '120px'
+  val.addEventListener('input', ev => {
+    e.value = Number(ev.target.value)
+    updateAll() // обновляет результаты, но не перерисовывает поля
+  })
+
+  const del = document.createElement('button')
+  del.textContent = 'Удалить'
+  del.className = 'ghost'
+  del.addEventListener('click', () => {
+    expenses = expenses.filter(x => x.id !== e.id)
+    renderExpenses()
+    updateAll()
+  })
+
+  wrap.appendChild(name)
+  wrap.appendChild(val)
+  wrap.appendChild(del)
+  return wrap
+}
+
+function renderExpenses() {
   expensesListEl.innerHTML = ''
   expenses.forEach(e => {
-    const wrap = document.createElement('div'); wrap.className='expense'
-    const name = document.createElement('input'); name.type='text'; name.value=e.name
-    name.addEventListener('input', ev=>{ e.name = ev.target.value; updateAll() })
-    const val = document.createElement('input'); val.type='number'; val.value=e.value; val.style.width='120px'
-    val.addEventListener('input', ev=>{ e.value = toNum(ev.target.value); updateAll() })
-    const del = document.createElement('button'); del.textContent='Удалить'; del.className='ghost'
-    del.addEventListener('click', ()=>{ expenses = expenses.filter(x=>x.id!==e.id); renderExpenses(); updateAll() })
-    wrap.appendChild(name); wrap.appendChild(val); wrap.appendChild(del)
-    expensesListEl.appendChild(wrap)
-  })
-}
-document.getElementById('addExpenseBtn').addEventListener('click', ()=>{
-  expenses.push({id:Date.now(), name:'Новый расход', value:0}); renderExpenses(); updateAll()
-})
-document.getElementById('resetExpenses').addEventListener('click', ()=>{
-  expenses = [{id:Date.now(), name:'Питание', value:6000}]; renderExpenses(); updateAll()
-})
-
-const incomeEl = document.getElementById('income')
-const totalExpensesEl = document.getElementById('totalExpenses')
-const netSavingsEl = document.getElementById('netSavings')
-const adviceEl = document.getElementById('advice')
-
-const principalEl = document.getElementById('principal')
-const annualRateEl = document.getElementById('annualRate')
-const rateLabelEl = document.getElementById('rateLabel')
-const termYearsEl = document.getElementById('termYears')
-const monthlyPaymentEl = document.getElementById('monthlyPayment')
-const totalOverpayEl = document.getElementById('totalOverpay')
-const amortTableBody = document.querySelector('#amortTable tbody')
-
-function calcMonthlyPayment(P, annualPercent, years){
-  if (years <= 0) return 0
-  if (annualPercent === 0) return P / (years * 12)
-  const r = annualPercent/100/12
-  const n = years * 12
-  return (P * r) / (1 - Math.pow(1 + r, -n))
-}
-function amortizationSchedule(P, annualPercent, years){
-  const schedule=[]
-  const monthly = calcMonthlyPayment(P, annualPercent, years)
-  let balance = P
-  const r = annualPercent/100/12
-  for(let i=1;i<=years*12;i++){
-    const interest = balance * r
-    const principalPaid = monthly - interest
-    balance = Math.max(0, balance - principalPaid)
-    schedule.push({month:i,payment:+monthly.toFixed(2),interest:+interest.toFixed(2),principal:+principalPaid.toFixed(2),balance:+balance.toFixed(2)})
-  }
-  return schedule
-}
-
-let chart = null
-const ctx = document.getElementById('balanceChart').getContext('2d')
-function renderChart(schedule){
-  const labels = schedule.slice(0,24).map(s=>'M'+s.month)
-  const data = schedule.slice(0,24).map(s=>s.balance)
-  if (!chart){
-    chart = new Chart(ctx, {
-      type:'line',
-      data:{labels,datasets:[{label:'Остаток по кредиту',data,borderColor:'#2b6cb0',tension:0.2}]},
-      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:false}}}
-    })
-  } else {
-    chart.data.labels = labels
-    chart.data.datasets[0].data = data
-    chart.update()
-  }
-}
-
-function renderAmortTable(schedule){
-  amortTableBody.innerHTML = ''
-  schedule.slice(0,12).forEach(r=>{
-    const tr=document.createElement('tr')
-    tr.innerHTML=`<td>${r.month}</td><td>${fmt(r.payment)}</td><td>${fmt(r.interest)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.balance)}</td>`
-    amortTableBody.appendChild(tr)
+    const row = createExpenseRow(e)
+    expensesListEl.appendChild(row)
   })
 }
 
-function updateAll(){
-  const income=toNum(incomeEl.value)
-  const totalExp=expenses.reduce((s,e)=>s+Number(e.value||0),0)
-  const net=income-totalExp
-  totalExpensesEl.textContent=fmt(totalExp)
-  netSavingsEl.textContent=fmt(net)
-  adviceEl.textContent=net<0?'Внимание: расходы превышают доход!':`Рекомендуемый минимум сбережений ~ ${(net*0.2).toLocaleString('ru-RU')} тг (примерно 20%)`
-
-  const P=toNum(principalEl.value)
-  const r=toNum(annualRateEl.value)
-  const years=Math.max(1,toNum(termYearsEl.value)||1)
-  rateLabelEl.textContent=`${r}%`
-  const monthly=calcMonthlyPayment(P,r,years)
-  monthlyPaymentEl.textContent=fmt(Math.round(monthly))
-  totalOverpayEl.textContent=fmt(Math.round(monthly*years*12-P))
-
-  const schedule=amortizationSchedule(P,r,years)
-  renderChart(schedule)
-  renderAmortTable(schedule)
-}
-
-// мгновенное обновление при вводе
-[incomeEl, principalEl, annualRateEl, termYearsEl].forEach(el=>{
-  el.addEventListener('input', updateAll)
+// Добавить и сбросить
+document.getElementById('addExpenseBtn').addEventListener('click', () => {
+  expenses.push({ id: Date.now(), name: 'Новый расход', value: 0 })
+  renderExpenses()
+  updateAll()
 })
 
-renderExpenses()
-updateAll()
+document.getElementById('resetExpenses').addEventListener('click', () => {
+  expenses = [
+    { id: 1, name: 'Питание', value: 6000 },
+    { id: 2, name: 'Транспорт', value: 2000 }
+  ]
+  renderExpenses()
+  updateAll()
+})
 </script>
