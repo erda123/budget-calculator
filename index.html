@@ -1,130 +1,7 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Калькулятор бюджета школьника</title>
-  <style>
-    :root{--bg:#f6f8fb;--card:#fff;--accent:#2b6cb0;--muted:#666}
-    body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;color:#111}
-    .wrap{max-width:1100px;margin:28px auto;padding:18px}
-    header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-    h1{margin:0;font-size:20px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px}
-    @media(min-width:880px){.grid{grid-template-columns:1fr 1fr}}
-    .card{background:var(--card);border-radius:10px;padding:14px;box-shadow:0 1px 6px rgba(16,24,40,0.06)}
-    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input[type="number"], input[type="text"], select{width:100%;padding:8px;border-radius:6px;border:1px solid #e6eef8;font-size:14px}
-    .row{display:flex;gap:8px;align-items:center}
-    .expenses-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-    .expense{display:flex;gap:8px}
-    .expense input[type="text"]{flex:1}
-    button{background:var(--accent);color:#fff;border:0;padding:8px 10px;border-radius:8px;cursor:pointer}
-    button.ghost{background:#eef3fb;color:var(--accent);border:1px solid #dbeafe}
-    .muted{color:var(--muted)}
-    .summary p{margin:6px 0}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{padding:6px;text-align:left;border-bottom:1px solid #f1f5f9}
-    .chart-wrap{height:260px}
-    footer{margin-top:10px;font-size:13px;color:var(--muted)}
-  </style>
-  <!-- Chart.js from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <div class="wrap">
-    <header>
-      <h1>Калькулятор бюджета школьника</h1>
-    </header>
-
-    <div class="grid">
-      <!-- Budget -->
-      <section class="card">
-        <h2>Бюджет (в мес., тг)</h2>
-        <div style="margin-top:8px">
-          <label>Доход (в месяц)</label>
-          <input id="income" type="number" value="15000" min="0" />
-        </div>
-
-        <div style="margin-top:12px">
-          <label>Расходы</label>
-          <div class="expenses-list" id="expensesList"></div>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="addExpenseBtn" type="button">Добавить расход</button>
-            <button id="resetExpenses" type="button" class="ghost">Сбросить</button>
-          </div>
-        </div>
-
-        <div style="margin-top:12px" class="summary">
-          <p>Всего расходов: <strong id="totalExpenses">0</strong> тг</p>
-          <p>Остаток (доход − расходы): <strong id="netSavings">0</strong> тг</p>
-          <p id="advice" class="muted"></p>
-        </div>
-      </section>
-
-      <!-- Loan -->
-      <section class="card">
-        <h2>Кредит</h2>
-
-        <div style="margin-top:8px">
-          <label>Сумма кредита (K)</label>
-          <input id="principal" type="number" value="15000" min="0" />
-        </div>
-
-        <div style="margin-top:8px">
-          <label>Годовая ставка (%)</label>
-          <input id="annualRate" type="range" min="0" max="30" value="12" />
-          <div style="display:flex;justify-content:space-between;font-size:13px">
-            <div>Текущая: <strong id="rateLabel">12%</strong></div>
-            <div class="muted">0% — 30%</div>
-          </div>
-        </div>
-
-        <div style="margin-top:8px">
-          <label>Срок (лет)</label>
-          <input id="termYears" type="number" value="2" min="1" />
-        </div>
-
-        <div style="margin-top:12px">
-          <p>Ежемесячный платёж: <strong id="monthlyPayment">—</strong> тг</p>
-          <p>Общая переплата: <strong id="totalOverpay">—</strong> тг</p>
-
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="exportCSV" type="button">Экспорт амортизации (CSV)</button>
-            <button id="copyParams" class="ghost" type="button">Копировать параметры</button>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <!-- Chart -->
-    <section class="card" style="margin-top:16px">
-      <h3>График остатка по кредиту</h3>
-      <div class="chart-wrap"><canvas id="balanceChart"></canvas></div>
-    </section>
-
-    <!-- Amortization table -->
-    <section class="card" style="margin-top:16px">
-      <h3>Амортизационный график (первые 12 мес.)</h3>
-      <div style="overflow-x:auto">
-        <table id="amortTable">
-          <thead>
-            <tr><th>Мес</th><th>Платёж</th><th>Проценты</th><th>Тело</th><th>Остаток</th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <footer>Подсказка: изменяй доход, расходы и параметры кредита — всё обновится автоматически. Для вставки в проект: сделай скриншоты или выложи HTML на GitHub Pages.</footer>
-  </div>
-
 <script>
-/* --- Utilities --- */
 function fmt(n){ return Number(n).toLocaleString('ru-RU') }
-function toNum(v){ return Number(String(v).replace(/\\s+/g,'')) || 0 }
+function toNum(v){ return Number(String(v).replace(/\s+/g,'')) || 0 }
 
-/* --- Expenses dynamic list --- */
 const expensesListEl = document.getElementById('expensesList')
 let expenses = [
   { id: 1, name: 'Питание', value: 6000 },
@@ -137,23 +14,22 @@ function renderExpenses(){
   expenses.forEach(e => {
     const wrap = document.createElement('div'); wrap.className='expense'
     const name = document.createElement('input'); name.type='text'; name.value=e.name
-    name.addEventListener('input', (ev)=> { e.name = ev.target.value; saveAndUpdate() })
+    name.addEventListener('input', ev=>{ e.name = ev.target.value; updateAll() })
     const val = document.createElement('input'); val.type='number'; val.value=e.value; val.style.width='120px'
-    val.addEventListener('input', (ev)=> { e.value = toNum(ev.target.value); saveAndUpdate() })
+    val.addEventListener('input', ev=>{ e.value = toNum(ev.target.value); updateAll() })
     const del = document.createElement('button'); del.textContent='Удалить'; del.className='ghost'
-    del.addEventListener('click', ()=> { expenses = expenses.filter(x=>x.id!==e.id); saveAndUpdate(); renderExpenses() })
+    del.addEventListener('click', ()=>{ expenses = expenses.filter(x=>x.id!==e.id); renderExpenses(); updateAll() })
     wrap.appendChild(name); wrap.appendChild(val); wrap.appendChild(del)
     expensesListEl.appendChild(wrap)
   })
 }
 document.getElementById('addExpenseBtn').addEventListener('click', ()=>{
-  expenses.push({id:Date.now(), name:'Новый расход', value:0}); renderExpenses(); saveAndUpdate()
+  expenses.push({id:Date.now(), name:'Новый расход', value:0}); renderExpenses(); updateAll()
 })
 document.getElementById('resetExpenses').addEventListener('click', ()=>{
-  expenses = [{id:Date.now(), name:'Питание', value:6000}]; renderExpenses(); saveAndUpdate()
+  expenses = [{id:Date.now(), name:'Питание', value:6000}]; renderExpenses(); updateAll()
 })
 
-/* --- Inputs --- */
 const incomeEl = document.getElementById('income')
 const totalExpensesEl = document.getElementById('totalExpenses')
 const netSavingsEl = document.getElementById('netSavings')
@@ -167,36 +43,27 @@ const monthlyPaymentEl = document.getElementById('monthlyPayment')
 const totalOverpayEl = document.getElementById('totalOverpay')
 const amortTableBody = document.querySelector('#amortTable tbody')
 
-const exportCSVBtn = document.getElementById('exportCSV')
-const copyParamsBtn = document.getElementById('copyParams')
-
-/* --- Calculation functions --- */
 function calcMonthlyPayment(P, annualPercent, years){
-  P = Number(P); annualPercent = Number(annualPercent); years = Number(years)
   if (years <= 0) return 0
   if (annualPercent === 0) return P / (years * 12)
   const r = annualPercent/100/12
   const n = years * 12
-  const payment = (P * r) / (1 - Math.pow(1 + r, -n))
-  return payment
+  return (P * r) / (1 - Math.pow(1 + r, -n))
 }
-
 function amortizationSchedule(P, annualPercent, years){
   const schedule=[]
   const monthly = calcMonthlyPayment(P, annualPercent, years)
   let balance = P
   const r = annualPercent/100/12
-  const n = years*12
-  for(let i=1;i<=n;i++){
+  for(let i=1;i<=years*12;i++){
     const interest = balance * r
     const principalPaid = monthly - interest
     balance = Math.max(0, balance - principalPaid)
-    schedule.push({month:i, payment: +monthly.toFixed(2), interest: +interest.toFixed(2), principal: +principalPaid.toFixed(2), balance: +balance.toFixed(2)})
+    schedule.push({month:i,payment:+monthly.toFixed(2),interest:+interest.toFixed(2),principal:+principalPaid.toFixed(2),balance:+balance.toFixed(2)})
   }
   return schedule
 }
 
-/* --- Chart --- */
 let chart = null
 const ctx = document.getElementById('balanceChart').getContext('2d')
 function renderChart(schedule){
@@ -205,8 +72,8 @@ function renderChart(schedule){
   if (!chart){
     chart = new Chart(ctx, {
       type:'line',
-      data:{labels, datasets:[{label:'Остаток по кредиту', data, fill:false, tension:0.2}]},
-      options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:false}}}
+      data:{labels,datasets:[{label:'Остаток по кредиту',data,borderColor:'#2b6cb0',tension:0.2}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:false}}}
     })
   } else {
     chart.data.labels = labels
@@ -215,96 +82,41 @@ function renderChart(schedule){
   }
 }
 
-/* --- Render amort table --- */
 function renderAmortTable(schedule){
   amortTableBody.innerHTML = ''
   schedule.slice(0,12).forEach(r=>{
-    const tr = document.createElement('tr')
-    tr.innerHTML = `<td>${r.month}</td><td>${fmt(r.payment)}</td><td>${fmt(r.interest)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.balance)}</td>`
+    const tr=document.createElement('tr')
+    tr.innerHTML=`<td>${r.month}</td><td>${fmt(r.payment)}</td><td>${fmt(r.interest)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.balance)}</td>`
     amortTableBody.appendChild(tr)
   })
 }
 
-/* --- Export CSV --- */
-function exportCSV(schedule){
-  const header = ['month','payment','interest','principal','balance']
-  const rows = schedule.map(r => [r.month,r.payment,r.interest,r.principal,r.balance])
-  const csv = [header, ...rows].map(r => r.join(',')).join('\\n')
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'})
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = 'amortization_schedule.csv'; a.click()
-  URL.revokeObjectURL(url)
-}
-
-/* --- Update all --- */
 function updateAll(){
-  // Budget summary
-  const income = toNum(incomeEl.value)
-  const totalExp = expenses.reduce((s,e)=>s + Number(e.value || 0), 0)
-  const net = income - totalExp
-  totalExpensesEl.textContent = fmt(totalExp)
-  netSavingsEl.textContent = fmt(net)
-  adviceEl.textContent = net < 0 ? 'Внимание: расходы превышают доход!' : `Рекомендуемый минимум сбережений ~ ${(net*0.2).toLocaleString('ru-RU')} тг (примерно 20%)`
+  const income=toNum(incomeEl.value)
+  const totalExp=expenses.reduce((s,e)=>s+Number(e.value||0),0)
+  const net=income-totalExp
+  totalExpensesEl.textContent=fmt(totalExp)
+  netSavingsEl.textContent=fmt(net)
+  adviceEl.textContent=net<0?'Внимание: расходы превышают доход!':`Рекомендуемый минимум сбережений ~ ${(net*0.2).toLocaleString('ru-RU')} тг (примерно 20%)`
 
-  // Loan
-  const P = toNum(principalEl.value)
-  const r = toNum(annualRateEl.value)
-  const years = Math.max(1, Math.floor(toNum(termYearsEl.value) || 1))
-  rateLabelEl.textContent = `${r}%`
-  const monthly = calcMonthlyPayment(P,r,years)
-  monthlyPaymentEl.textContent = fmt(Math.round(monthly))
-  const totalOverpay = Math.round(monthly*years*12 - P)
-  totalOverpayEl.textContent = fmt(totalOverpay)
+  const P=toNum(principalEl.value)
+  const r=toNum(annualRateEl.value)
+  const years=Math.max(1,toNum(termYearsEl.value)||1)
+  rateLabelEl.textContent=`${r}%`
+  const monthly=calcMonthlyPayment(P,r,years)
+  monthlyPaymentEl.textContent=fmt(Math.round(monthly))
+  totalOverpayEl.textContent=fmt(Math.round(monthly*years*12-P))
 
-  const schedule = amortizationSchedule(P,r,years)
+  const schedule=amortizationSchedule(P,r,years)
   renderChart(schedule)
   renderAmortTable(schedule)
-
-  // Save to localStorage (optional)
-  try {
-    localStorage.setItem('budget_calc_v1', JSON.stringify({income, expenses, P, r, years}))
-  } catch(e){}
 }
 
-/* --- Copy params --- */
-copyParamsBtn.addEventListener('click', ()=>{
-  const obj = {income: toNum(incomeEl.value), expenses, principal: toNum(principalEl.value), annualRate: toNum(annualRateEl.value), termYears: toNum(termYearsEl.value)}
-  navigator.clipboard?.writeText(JSON.stringify(obj,null,2))
-  alert('Параметры скопированы в буфер обмена')
+// мгновенное обновление при вводе
+[incomeEl, principalEl, annualRateEl, termYearsEl].forEach(el=>{
+  el.addEventListener('input', updateAll)
 })
 
-exportCSVBtn.addEventListener('click', ()=> {
-  const P = toNum(principalEl.value), r = toNum(annualRateEl.value), years = Math.max(1, Math.floor(toNum(termYearsEl.value) || 1))
-  const schedule = amortizationSchedule(P,r,years)
-  exportCSV(schedule)
-})
-
-/* --- Event listeners --- */
-incomeEl.addEventListener('input', updateAll)
-principalEl.addEventListener('input', updateAll)
-annualRateEl.addEventListener('input', updateAll)
-termYearsEl.addEventListener('input', updateAll)
-
-/* --- Load saved or init --- */
-function saveAndUpdate(){
-  renderExpenses()
-  updateAll()
-}
-(function init(){
-  // try load saved
-  try{
-    const saved = JSON.parse(localStorage.getItem('budget_calc_v1') || 'null')
-    if (saved){
-      incomeEl.value = saved.income ?? incomeEl.value
-      principalEl.value = saved.P ?? principalEl.value
-      annualRateEl.value = saved.r ?? annualRateEl.value
-      termYearsEl.value = saved.years ?? termYearsEl.value
-      expenses = saved.expenses && saved.expenses.length ? saved.expenses : expenses
-    }
-  }catch(e){}
-  renderExpenses()
-  updateAll()
-})()
+renderExpenses()
+updateAll()
 </script>
-</body>
-</html>
